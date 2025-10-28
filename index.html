@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>المنتجات</title>
+    <style>
+      body {
+        font-family: "Cairo", sans-serif !important;
+        background: #f5f5f5;
+        padding: 20px;
+        margin: 0;
+      }
+      .address-div {
+        font-family: "Cairo", sans-serif;
+      }
+      .address-form-global input {
+        text-align: center;
+        font-family: "Cairo", sans-serif;
+        text-align: center;
+        width: 70% !important;
+      }
+      h1,
+      h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #333;
+      }
+
+      .products {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        font-family: "Cairo", sans-serif !important;
+
+        justify-items: center;
+      }
+
+      .product-card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 15px;
+        width: 100%;
+        max-width: 300px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+      }
+
+      .product-card img {
+        width: 250px;
+        height: 250px;
+        /* object-fit: cover; */
+        border-radius: 8px;
+      }
+
+      .product-card h3 {
+        margin: 10px 0 5px;
+        color: #222;
+      }
+
+      .product-card p {
+        margin: 5px 0;
+        color: #555;
+        font-weight: bold;
+      }
+
+      .product-card input[type="number"] {
+        width: 60px;
+        padding: 6px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        text-align: center;
+        font-family: "Cairo", sans-serif !important;
+
+        margin: 5px 0;
+      }
+
+      .product-card button {
+        padding: 6px 12px;
+        margin-top: 5px;
+        background-color: #28a745;
+        color: #fff;
+        font-family: "Cairo", sans-serif !important;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .whatsappBtn {
+        font-family: "Cairo", sans-serif !important;
+      }
+      .product-card button:hover {
+        background-color: #218838;
+      }
+
+      #orderDetails {
+        max-width: 700px;
+        margin: 20px auto 40px;
+        padding: 10px;
+        text-align: center;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      #orderDetails div.order-item {
+        border-bottom: 1px solid #ddd;
+        padding: 10px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      #orderDetails div.order-item img {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 6px;
+      }
+
+      #orderDetails div.order-item div.details {
+        flex: 1;
+        margin-left: 10px;
+        text-align: right;
+      }
+      .save-address-btn {
+        font-family: "Cairo", sans-serif !important;
+      }
+      #orderDetails div.order-item button {
+        padding: 4px 8px;
+        background: #dc3545;
+        color: #fff;
+        font-family: "Cairo", sans-serif;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-left: 20px;
+      }
+
+      #orderDetails div.order-item button:hover {
+        background: #b02a37;
+      }
+
+      #totalPrice {
+        margin-top: 15px;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      /* Media Queries */
+      @media (max-width: 992px) {
+        .product-card img {
+          height: 160px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        body {
+          padding: 10px;
+        }
+        .products {
+          grid-template-columns: 1fr;
+        }
+        /* .product-card {
+          max-width: 90%;
+        } */
+        .product-card img {
+          height: 200px;
+        }
+        .product-card input[type="number"] {
+          width: 50px;
+        }
+        #orderDetails div.order-item {
+          align-items: flex-end;
+          text-align: right;
+        }
+        #orderDetails div.order-item div.details {
+          margin-left: 0;
+          margin-top: 5px;
+        }
+      }
+      @media (max-width: 480px) {
+        /* .product-card img {
+          height: 180px;
+        } */
+        .product-card button {
+          padding: 5px 10px;
+        }
+        #orderDetails div.order-item img {
+          width: 50px;
+          height: 50px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>المنتجات</h1>
+    <div class="products" id="productsContainer"></div>
+
+    <h2>تفاصيل الطلبات</h2>
+    <div id="orderDetails"></div>
+    <!-- شيلنا <p> الثابت -->
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+      import {
+        getFirestore,
+        collection,
+        getDocs,
+        query,
+        orderBy,
+      } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyBuk7KKqLr1s5OBY0VYd6Az4mfqtY5TTrQ",
+        authDomain: "addproject-a4c85.firebaseapp.com",
+        projectId: "addproject-a4c85",
+        storageBucket: "addproject-a4c85.firebasestorage.app",
+        messagingSenderId: "302422763360",
+        appId: "1:302422763360:web:20fa63201abc9e6ef62005",
+        measurementId: "G-L4CWPFE7WE",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      const productsContainer = document.getElementById("productsContainer");
+      const orderDetails = document.getElementById("orderDetails");
+      let orders = [];
+      let addressData = { nameUser: "", phone: "", city: "", address: "" };
+
+      // زر واتساب
+      const whatsappBtn = document.createElement("button");
+      whatsappBtn.className = "whatsappBtn";
+      whatsappBtn.textContent = "إرسال إلى واتساب";
+      whatsappBtn.style.marginTop = "10px";
+      whatsappBtn.style.padding = "8px 15px";
+      whatsappBtn.style.backgroundColor = "#25D366";
+      whatsappBtn.style.color = "#fff";
+      whatsappBtn.style.border = "none";
+      whatsappBtn.style.borderRadius = "5px";
+      whatsappBtn.style.cursor = "pointer";
+      whatsappBtn.style.fontWeight = "bold";
+      whatsappBtn.style.display = "none";
+      whatsappBtn.style.fontFamily = "Cairo, sans - serif";
+      orderDetails.appendChild(whatsappBtn);
+
+      whatsappBtn.addEventListener("click", () => {
+        if (orders.length === 0) return alert("لا توجد منتجات لإرسالها.");
+        let totalPrice = orders.reduce((sum, o) => sum + o.qty * o.price, 0);
+        let message = "تفاصيل الطلب:%0A";
+
+        orders.forEach((o) => {
+          message += `المنتج: ${encodeURIComponent(o.name)}%0A`;
+          message += `السعر: ${o.price} جنيه%0A`;
+          message += `العدد: ${o.qty}%0A`;
+          message += `السعر النهائي: ${o.qty * o.price} جنيه%0A%0A`;
+        });
+
+        if (
+          addressData.nameUser ||
+          addressData.phone ||
+          addressData.city ||
+          addressData.address
+        ) {
+          message += `%0Aالاسم: ${encodeURIComponent(addressData.nameUser)}%0A`;
+          message += `رقم التليفون: ${encodeURIComponent(
+            addressData.phone
+          )}%0A`;
+          message += `المحافظة: ${encodeURIComponent(addressData.city)}%0A`;
+          message += `العنوان: ${encodeURIComponent(addressData.address)}%0A`;
+        }
+
+        message += `%0Aالسعر النهائي: ${totalPrice} جنيه`;
+        const phone = "201018078546";
+        window.open(`https://wa.me/${phone}?text=${message}`, "_blank");
+      });
+
+      function fixDriveLink(url) {
+        if (url.includes("drive.google.com")) {
+          let id = url.match(/\/d\/(.+?)\//);
+          if (id && id[1])
+            return `https://drive.google.com/uc?export=view&id=${id[1]}`;
+        }
+        return url;
+      }
+
+      // رسالة "لا توجد طلبات" تظهر مرة واحدة
+      const noOrdersMsg = document.createElement("p");
+      noOrdersMsg.className = "no-orders-msg";
+      noOrdersMsg.textContent = "لا توجد طلبات حتى الآن";
+      noOrdersMsg.style.display = "block"; // تظهر أول مرة
+      orderDetails.appendChild(noOrdersMsg);
+
+      function renderOrders() {
+        // مسح العناصر القديمة ما عدا رسالة لا توجد طلبات
+        orderDetails
+          .querySelectorAll(".order-item, .total-div, .address-display")
+          .forEach((el) => el.remove());
+
+        if (orders.length === 0) {
+          noOrdersMsg.style.display = "block"; // تظهر لو مفيش منتجات
+          whatsappBtn.style.display = "none";
+          return;
+        } else {
+          noOrdersMsg.style.display = "none"; // تختفي لو فيه منتجات
+        }
+
+        let totalPrice = 0;
+
+        orders.forEach((order, index) => {
+          const div = document.createElement("div");
+          div.classList.add("order-item");
+          div.style.display = "flex";
+          div.style.alignItems = "center";
+          div.style.marginBottom = "10px";
+          div.innerHTML = `
+        <img src="${order.image}" alt="${
+            order.name
+          }" style="width:80px; height:80px; object-fit:cover; margin-right:10px; border-radius:6px;">
+        <div class="details" style="flex:1; text-align:right;">
+          <strong>${order.name}</strong><br>
+          السعر: ${order.price} جنيه<br>
+          العدد: ${order.qty}<br>
+          السعر النهائي: ${order.qty * order.price} جنيه
+        </div>
+        <button data-index="${index}" style="background:#dc3545; color:#fff; border:none; border-radius:4px; padding:5px 10px; cursor:pointer;">حذف</button>
+      `;
+          div.querySelector("button").addEventListener("click", (e) => {
+            const idx = e.target.getAttribute("data-index");
+            orders.splice(idx, 1);
+            renderOrders();
+          });
+          orderDetails.appendChild(div);
+          totalPrice += order.qty * order.price;
+        });
+
+        const totalDiv = document.createElement("div");
+        totalDiv.classList.add("total-div");
+        totalDiv.style.marginTop = "15px";
+        totalDiv.style.display = "flex";
+        totalDiv.style.alignItems = "center";
+        totalDiv.style.justifyContent = "space-around";
+        totalDiv.style.textAlign = "right";
+        totalDiv.style.fontWeight = "bold";
+        totalDiv.style.marginBottom = "10px";
+        totalDiv.textContent = `السعر النهائي: ${totalPrice} جنيه`;
+        orderDetails.appendChild(totalDiv);
+
+        // زر إضافة العنوان
+        let addAddressBtn = orderDetails.querySelector(".address-div");
+        if (!addAddressBtn) {
+          addAddressBtn = document.createElement("button");
+          addAddressBtn.textContent = "إضافة العنوان";
+          addAddressBtn.classList.add("address-div");
+          addAddressBtn.style.marginRight = "10px";
+          addAddressBtn.style.padding = "5px 10px";
+          addAddressBtn.style.backgroundColor = "#007bff";
+          addAddressBtn.style.fontSize = "15px";
+          addAddressBtn.style.color = "#fff";
+          addAddressBtn.style.border = "none";
+          addAddressBtn.style.borderRadius = "4px";
+          addAddressBtn.style.cursor = "pointer";
+          totalDiv.appendChild(addAddressBtn);
+
+          addAddressBtn.addEventListener("click", () => {
+            let addressForm = orderDetails.querySelector(
+              ".address-form-global"
+            );
+            if (!addressForm) {
+              addressForm = document.createElement("div");
+              addressForm.classList.add("address-form-global");
+              addressForm.style.marginTop = "10px";
+              addressForm.style.border = "1px solid #ccc";
+              addressForm.style.padding = "10px";
+              addressForm.style.borderRadius = "6px";
+
+              addressForm.innerHTML = `
+            <input type="text" placeholder="الاسم" class="input-name" style="margin-bottom:5px; width:100%; padding:5px;"><br>
+            <input type="text" placeholder="رقم التليفون" class="input-phone" style="margin-bottom:5px; width:100%; padding:5px;"><br>
+            <input type="text" placeholder="المحافظة" class="input-city" style="margin-bottom:5px; width:100%; padding:5px;"><br>
+            <input type="text" placeholder="العنوان" class="input-address" style="margin-bottom:5px; width:100%; padding:5px;"><br>
+            <button class="save-address-btn" style="background:#28a745; color:#fff; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">حفظ العنوان</button>
+          `;
+              orderDetails.appendChild(addressForm);
+
+              addressForm.querySelector(".input-name").value =
+                addressData.nameUser;
+              addressForm.querySelector(".input-phone").value =
+                addressData.phone;
+              addressForm.querySelector(".input-city").value = addressData.city;
+              addressForm.querySelector(".input-address").value =
+                addressData.address;
+
+              addressForm
+                .querySelector(".save-address-btn")
+                .addEventListener("click", () => {
+                  addressData.nameUser =
+                    addressForm.querySelector(".input-name").value;
+                  addressData.phone =
+                    addressForm.querySelector(".input-phone").value;
+                  addressData.city =
+                    addressForm.querySelector(".input-city").value;
+                  addressData.address =
+                    addressForm.querySelector(".input-address").value;
+
+                  addressForm.remove();
+
+                  let displayDiv =
+                    orderDetails.querySelector(".address-display");
+                  if (!displayDiv) {
+                    displayDiv = document.createElement("div");
+                    displayDiv.classList.add("address-display");
+                    displayDiv.style.textAlign = "right";
+                    displayDiv.style.border = "1px solid #ccc";
+                    displayDiv.style.padding = "10px";
+                    displayDiv.style.borderRadius = "6px";
+                    displayDiv.style.marginBottom = "10px";
+                    totalDiv.insertAdjacentElement("afterend", displayDiv);
+                  }
+
+                  displayDiv.innerHTML = `
+              <strong>العنوان:</strong><br>
+              الاسم: ${addressData.nameUser}<br>
+              رقم التليفون: ${addressData.phone}<br>
+              المحافظة: ${addressData.city}<br>
+              العنوان: ${addressData.address}
+            `;
+                });
+            }
+          });
+        }
+
+        if (orders.length > 0) whatsappBtn.style.display = "inline-block";
+      }
+
+      async function loadProducts() {
+        const q = query(
+          collection(db, "products"),
+          orderBy("createdAt", "desc")
+        );
+        const snapshot = await getDocs(q);
+        productsContainer.innerHTML = "";
+
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          const productCard = document.createElement("div");
+          productCard.classList.add("product-card");
+          productCard.innerHTML = `
+        <img src="${fixDriveLink(data.image)}" alt="${data.name}" />
+        <h3>${data.name}</h3>
+        <p>${data.price} جنيه</p>
+        <input type="number" min="1" value="1" />
+        <button>أضف للفاتورة</button>
+      `;
+          const inputQty = productCard.querySelector("input");
+          const addButton = productCard.querySelector("button");
+
+          addButton.addEventListener("click", () => {
+            const qty = parseInt(inputQty.value);
+            if (qty < 1) return alert("الكمية يجب أن تكون 1 أو أكثر");
+            orders.push({
+              name: data.name,
+              price: data.price,
+              qty: qty,
+              image: fixDriveLink(data.image),
+            });
+            renderOrders();
+          });
+
+          productsContainer.appendChild(productCard);
+        });
+      }
+
+      loadProducts();
+    </script>
+  </body>
+</html>
